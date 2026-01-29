@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Intel | AI Lead Scraper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(229, 231, 235, 0.5); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .loader-ring { border: 2px solid #e2e8f0; border-top: 2px solid #6366f1; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="min-h-screen p-6 md:p-10">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">HR Intelligence Scraper</h1>
+                <p class="text-slate-500 font-medium">AI-Powered Extraction with <span class="text-indigo-600 font-bold">GPT-4o Verification</span>.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">Server Active</span>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Panel: Control & Logs -->
+            <div class="lg:col-span-4 space-y-6">
+                <!-- Upload Section -->
+                <div class="glass-card p-6 rounded-3xl shadow-lg border border-white">
+                    <h2 class="text-slate-800 font-bold mb-4 flex items-center gap-2">
+                        <i data-lucide="file-up" class="w-5 h-5 text-indigo-500"></i> Data Input
+                    </h2>
+                    <div id="dropZone" class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center bg-slate-50/50 hover:bg-white transition-all cursor-pointer group">
+                        <input type="file" id="csvFile" class="hidden" accept=".csv">
+                        <div class="bg-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm group-hover:scale-110 transition-transform">
+                            <i data-lucide="upload-cloud" class="w-6 h-6 text-slate-400"></i>
+                        </div>
+                        <p id="fileNameDisplay" class="text-sm text-slate-500 mb-4">Click to upload Company CSV</p>
+                        <button onclick="document.getElementById('csvFile').click()" class="bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:shadow-md transition-all">Choose File</button>
+                    </div>
+                    <button id="runBtn" onclick="startProcess()" class="w-full mt-4 bg-slate-900 text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-slate-200 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                        Launch AI Scraper
+                    </button>
+                </div>
+
+                <!-- Live Log Console -->
+                <div class="glass-card p-6 rounded-3xl shadow-lg border border-white h-[400px] flex flex-col">
+                    <h2 class="text-slate-800 font-bold mb-4 flex items-center justify-between">
+                        <span class="flex items-center gap-2"><i data-lucide="terminal" class="w-5 h-5 text-indigo-500"></i> Live Process</span>
+                        <span id="liveStatus" class="hidden flex items-center gap-2 text-[10px] text-emerald-500 uppercase tracking-widest font-bold">
+                            <span class="loader-ring"></span> Working
+                        </span>
+                    </h2>
+                    <div id="logConsole" class="flex-1 overflow-y-auto custom-scrollbar bg-slate-900 rounded-xl p-4 text-[11px] font-mono text-slate-400 space-y-2">
+                        <div class="text-indigo-400">> AI Agent Ready. Waiting for input...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Table Results -->
+            <div class="lg:col-span-8">
+                <div class="glass-card rounded-3xl shadow-xl border border-white overflow-hidden min-h-[700px] flex flex-col">
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white/50">
+                        <h2 class="text-slate-800 font-bold flex items-center gap-2">
+                            <i data-lucide="list-checks" class="w-5 h-5 text-indigo-500"></i> Results
+                        </h2>
+                        <a id="downloadBtn" href="#" class="hidden bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-emerald-600 shadow-lg shadow-emerald-100 transition-all">
+                            <i data-lucide="download" class="w-4 h-4"></i> Download CSV
+                        </a>
+                    </div>
+
+                    <div id="emptyState" class="flex-1 flex flex-col items-center justify-center p-20 text-center">
+                        <div class="bg-slate-100 w-20 h-20 rounded-full flex items-center justify-center mb-4">
+                            <i data-lucide="bot" class="w-10 h-10 text-slate-300"></i>
+                        </div>
+                        <h3 class="text-slate-400 font-medium">No Data Processed</h3>
+                        <p class="text-slate-300 text-sm max-w-[250px] mt-2">Upload companies to let the AI find the best HR Leads.</p>
+                    </div>
+
+                    <div id="tableWrapper" class="hidden flex-1 overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50/50 sticky top-0 backdrop-blur-md z-10">
+                                <tr class="text-[10px] uppercase tracking-widest text-slate-400 font-bold border-b border-slate-100">
+                                    <th class="px-6 py-4">Company</th>
+                                    <th class="px-6 py-4">Full Name & Title</th>
+                                    <th class="px-6 py-4">Domain</th>
+                                    <th class="px-6 py-4">Link</th>
+                                    <th class="px-6 py-4 text-center">AI Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="divide-y divide-slate-50 text-sm bg-white">
+                                <!-- Dynamic Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Captcha Modal Overlay -->
+    <div id="captchaOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md hidden flex items-center justify-center z-[100] p-6">
+        <div class="bg-white p-10 rounded-[40px] max-w-sm w-full text-center shadow-2xl">
+            <div class="w-24 h-24 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i data-lucide="alert-triangle" class="w-12 h-12 text-amber-600"></i>
+            </div>
+            <h2 class="text-2xl font-black text-slate-900 mb-3">Solve Captcha</h2>
+            <p class="text-slate-500 text-sm mb-8 leading-relaxed">Google needs verification. Please check the browser window opened by the server and solve the puzzle.</p>
+            <div class="flex items-center justify-center gap-3 text-indigo-600 font-bold text-xs animate-pulse">
+                <div class="loader-ring"></div> Waiting...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        const csvInput = document.getElementById('csvFile');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const runBtn = document.getElementById('runBtn');
+        const logConsole = document.getElementById('logConsole');
+        const captchaOverlay = document.getElementById('captchaOverlay');
+        const liveStatus = document.getElementById('liveStatus');
+
+        // Connect to Server Status (SSE)
+        const eventSource = new EventSource('/status');
+        eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'progress') {
+                addLog(data.message);
+                captchaOverlay.classList.add('hidden');
+                liveStatus.classList.remove('hidden');
+            }
+            if (data.type === 'captcha') {
+                addLog(`⚠️ ALERT: Captcha detected. Solve in browser!`, 'text-amber-400');
+                captchaOverlay.classList.remove('hidden');
+            }
+        };
+
+        function addLog(msg, colorClass = 'text-slate-400') {
+            const entry = document.createElement('div');
+            entry.className = colorClass;
+            entry.innerHTML = `<span class="text-slate-600 font-mono mr-2">[${new Date().toLocaleTimeString([], {hour12:false})}]</span> ${msg}`;
+            logConsole.prepend(entry);
+        }
+
+        csvInput.addEventListener('change', () => {
+            if (csvInput.files.length > 0) {
+                fileNameDisplay.innerText = csvInput.files[0].name;
+                fileNameDisplay.classList.add('text-indigo-600', 'font-bold');
+                addLog(`File attached: ${csvInput.files[0].name}`);
+            }
+        });
+
+        async function startProcess() {
+            if (!csvInput.files[0]) return alert("Please select a CSV file first.");
+
+            const formData = new FormData();
+            formData.append('csvfile', csvInput.files[0]);
+
+            // UI Reset
+            runBtn.disabled = true;
+            runBtn.innerText = "Processing with AI...";
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.getElementById('tableWrapper').classList.add('hidden');
+
+            try {
+                const response = await fetch('/upload', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                if (!result.success) {
+                    addLog(`Error: ${result.message}`, 'text-red-400');
+                    alert(result.message);
+                    return;
+                }
+
+                renderTable(result.data);
+                document.getElementById('downloadBtn').href = result.downloadUrl;
+                document.getElementById('downloadBtn').classList.remove('hidden');
+                addLog(`Success! Found ${result.data.length} leads.`, 'text-emerald-400');
+
+            } catch (err) {
+                addLog(`System Error: Failed to reach server.`, 'text-red-400');
+                console.error(err);
+            } finally {
+                runBtn.disabled = false;
+                runBtn.innerText = "Launch AI Scraper";
+                liveStatus.classList.add('hidden');
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('tableWrapper').classList.remove('hidden');
+            tbody.innerHTML = '';
+
+            data.forEach(row => {
+                // Logic to handle AI Confidence strings instead of Numbers
+                let confidenceClass = 'bg-slate-100 text-slate-600 border-slate-200';
+                const confidence = row.accuracy || 'Low';
+                
+                if (confidence.toLowerCase().includes('high')) {
+                    confidenceClass = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+                } else if (confidence.toLowerCase().includes('medium')) {
+                    confidenceClass = 'bg-amber-100 text-amber-700 border-amber-200';
+                }
+
+                // Handle missing links
+                let linkHtml = `<span class="text-slate-300">N/A</span>`;
+                if(row.link && row.link.startsWith('http')) {
+                    linkHtml = `
+                        <a href="${row.link}" target="_blank" class="inline-flex items-center gap-1.5 text-indigo-600 font-bold hover:text-indigo-800 transition-colors">
+                            Profile <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        </a>
+                    `;
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors group">
+                        <td class="px-6 py-4 font-bold text-slate-800">${row.company}</td>
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-slate-800">${row.name}</div>
+                            <div class="text-[11px] font-medium text-slate-500 uppercase tracking-wide mt-0.5">${row.title}</div>
+                        </td>
+                        <td class="px-6 py-4 text-slate-500 font-mono text-[11px]">${row.domain}</td>
+                        <td class="px-6 py-4">${linkHtml}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase border ${confidenceClass}">
+                                ${confidence}
+                            </span>
+                            <div class="text-[10px] text-slate-400 mt-1 max-w-[150px] mx-auto truncate" title="${row.reasoning || ''}">
+                                ${row.reasoning ? 'Hover for AI reasoning' : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
