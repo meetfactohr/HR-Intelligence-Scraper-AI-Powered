@@ -15,7 +15,7 @@ const upload = multer({ dest: 'uploads/' });
 // --- CONFIGURATION ---
 // ⚠️ PASTE YOUR OPENAI API KEY HERE
 const openai = new OpenAI({
-    apiKey: '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' 
+    apiKey: 'key' 
 });
 
 app.use(express.static('public'));
@@ -267,5 +267,6 @@ app.post('/upload', upload.single('csvfile'), (req, res) => {
 });
 
 app.get('/download/:file', (req, res) => res.download(path.join(__dirname, 'results', req.params.file)));
+
 
 app.listen(3000, () => console.log('Server running: http://localhost:3000'));
